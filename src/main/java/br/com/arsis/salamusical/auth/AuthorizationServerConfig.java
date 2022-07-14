@@ -3,6 +3,7 @@ package br.com.arsis.salamusical.auth;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
@@ -20,15 +21,30 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 	@Autowired
 	private AuthenticationManager authenticationManager;
 	
+	@Autowired
+	private UserDetailsService userDetailsService;
+	
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
 		clients
 			.inMemory()
 				.withClient("arsis-web")
 				.secret(passwordEncoder.encode("web123"))
-				.authorizedGrantTypes("password")
+				.authorizedGrantTypes("password", "refresh_token")
 				.scopes("write", "read")
 				.accessTokenValiditySeconds(60 * 60 * 6) //6 horas (padrao é 12)
+				.refreshTokenValiditySeconds(60 * 60 * 12)
+			.and()
+				.withClient("arsisanalytics")
+				.secret(passwordEncoder.encode("arsis123"))
+				.authorizedGrantTypes("authorization_code")
+				.scopes("write", "read")
+				.redirectUris("http://aplicacao-aluno")
+			.and()
+				.withClient("cliente-backend")
+				.secret(passwordEncoder.encode("back123"))
+				.authorizedGrantTypes("client_credentials")
+				.scopes("write", "read")
 			.and()
 				.withClient("checktoken")
 					.secret(passwordEncoder.encode("check123"));
@@ -42,7 +58,9 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 	
 	@Override
 	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-		endpoints.authenticationManager(authenticationManager);
+		endpoints
+			.authenticationManager(authenticationManager)
+			.userDetailsService(userDetailsService);
 	}
 	
 }
