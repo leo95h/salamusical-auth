@@ -1,4 +1,4 @@
-package br.com.arsis.salamusical.auth;
+package br.com.arsis.salamusical.auth.core;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
