@@ -2,13 +2,14 @@ package br.com.arsis.salamusical.auth.core;
 
 import java.util.Arrays;
 
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
@@ -26,9 +27,6 @@ import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFacto
 @Configuration
 @EnableAuthorizationServer
 public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
-
-	@Autowired
-	private PasswordEncoder passwordEncoder;
 	
 	@Autowired
 	private AuthenticationManager authenticationManager;
@@ -38,36 +36,17 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 	
 	@Autowired
 	private JwtKeyStoreProperties jwtKeyStoreProperties;
-		
+	
+	@Autowired
+	private DataSource dataSource;
+	
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-		clients
-			.inMemory()
-				.withClient("arsis-web")
-				.secret(passwordEncoder.encode("web123"))
-				.authorizedGrantTypes("password", "refresh_token")
-				.scopes("WRITE", "READ")
-				.accessTokenValiditySeconds(60 * 60 * 6) //6 horas (padrao é 12)
-				.refreshTokenValiditySeconds(60 * 60 * 12)
-			.and()
-				.withClient("arsisanalytics")
-				.secret(passwordEncoder.encode("arsis123"))
-				.authorizedGrantTypes("authorization_code")
-				.scopes("WRITE", "READ")
-				.redirectUris("http://aplicacao-aluno")
-			.and()
-				.withClient("cliente-backend")
-				.secret(passwordEncoder.encode("back123"))
-				.authorizedGrantTypes("client_credentials")
-				.scopes("WRITE", "READ")
-			.and()
-				.withClient("checktoken")
-					.secret(passwordEncoder.encode("check123"));
+		clients.jdbc(dataSource);
 	}
 	
 	@Override
 	public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
-		//security.checkTokenAccess("isAuthenticated()");
 		security.checkTokenAccess("permitAll()")
 			.tokenKeyAccess("permitAll()")
 			.allowFormAuthenticationForClients();
